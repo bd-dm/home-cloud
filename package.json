@@ -7,9 +7,11 @@
     "ios": "react-native run-ios --port 9988",
     "start": "react-native start --port 9988",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "postinstall": "npx pod-install"
   },
   "dependencies": {
+    "@react-native-camera-roll/camera-roll": "^5.2.0",
     "react": "18.1.0",
     "react-native": "0.70.6"
   },
