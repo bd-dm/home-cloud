@@ -14,4 +14,5 @@ module.exports = {
       },
     }),
   },
+  assetExts: ['mp3'],
 };
