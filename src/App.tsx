@@ -1,9 +1,12 @@
 import React, {FC, useEffect, useState} from 'react';
 import {FlatList, SafeAreaView, StatusBar} from 'react-native';
-import BackgroundService from 'react-native-background-actions';
+import BackgroundFetch from 'react-native-background-fetch';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import {PhotoRow} from './components/photos-row/types';
 import {PhotosRow} from './components/photos-row';
+
+const sleep = (time: number) =>
+  new Promise(resolve => setTimeout(() => resolve(undefined), time));
 
 const App: FC = () => {
   const [imageRows, setImageRows] = useState<PhotoRow[]>([]);
@@ -28,44 +31,31 @@ const App: FC = () => {
   }, []);
 
   const startBG = async () => {
-    const sleep = (time: number) =>
-      new Promise(resolve => setTimeout(() => resolve(undefined), time));
-
-    const veryIntensiveTask = async (
-      taskDataArguments: {delay?: number} = {},
-    ) => {
-      const {delay} = taskDataArguments;
-
-      for (let i = 0; BackgroundService.isRunning(); i++) {
-        console.log(i);
-        await sleep(delay ?? 1000);
-        console.log(i, 'done');
-
-        if (i > 500) {
-          await BackgroundService.stop();
-        }
+    const runBGProcess = async (taskId: string) => {
+      for (let i = 0; i < 10000; i++) {
+        await fetch(
+          'https://webhook.site/35fb3854-a9e7-4b79-9d12-719df3161a90',
+          {
+            method: 'POST',
+            body: JSON.stringify({taskId, i}),
+          },
+        );
+        await sleep(1000);
       }
+      BackgroundFetch.finish(taskId);
     };
 
-    const options = {
-      taskName: 'Example',
-      taskTitle: 'ExampleTask title',
-      taskDesc: 'ExampleTask description',
-      taskIcon: {
-        name: 'ic_launcher',
-        type: 'mipmap',
-      },
-      color: '#ff00ff',
-      linkingURI: 'yourSchemeHere://chat/jane',
-      parameters: {
-        delay: 1000,
-      },
+    const onBGTimeout = (taskId: string) => {
+      console.log('TIMEOUT', taskId);
+      BackgroundFetch.finish(taskId);
     };
 
-    await BackgroundService.start(veryIntensiveTask, options);
-    await BackgroundService.updateNotification({
-      taskDesc: 'New ExampleTask description',
-    });
+    let status = await BackgroundFetch.configure(
+      {minimumFetchInterval: 15},
+      runBGProcess,
+      onBGTimeout,
+    );
+    console.log('[BackgroundFetch] configure status: ', status);
   };
 
   return (
