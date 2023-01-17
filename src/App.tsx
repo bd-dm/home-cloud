@@ -13,6 +13,7 @@ import {
 } from '@react-native-camera-roll/camera-roll';
 import {PhotoRow, PhotosRow} from './components';
 import {ReliableUploader, ReliableUploaderOptions} from '../native-bridges';
+import {getFilePath} from './utils';
 
 const UPLOAD_URL = 'http://192.168.0.103:8080/upload';
 
@@ -25,6 +26,7 @@ const getOptionsForUpload = async (
     url: UPLOAD_URL,
     method: 'POST',
     fileId,
+    filePath: await getFilePath(file),
     field: 'file',
   };
 };
@@ -53,8 +55,8 @@ const App: FC = () => {
 
   const fetchPhotos = async () => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
-      assetType: 'Videos',
-      first: 25,
+      assetType: 'All',
+      first: 100,
     });
 
     setFiles(photosFromRoll);

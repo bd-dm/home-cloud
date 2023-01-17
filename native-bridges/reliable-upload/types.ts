@@ -10,6 +10,7 @@ interface ReliableUploaderOptions {
   url: string;
   method: 'PUT' | 'POST';
   fileId: string;
+  filePath?: string;
   field: string;
   headers?: Record<string, string>;
 }
