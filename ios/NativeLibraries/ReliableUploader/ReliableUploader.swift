@@ -34,13 +34,15 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
     connection.start()
   }
   
-  @objc func uploadItems(_ optionsDictionary: [NSDictionary]) {
+  @objc func uploadItems(_ optionsDictionary: [NSDictionary], resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
     let itemsToUpload = ReliableUploaderHelpers.dictionaryToOptionsArray(optionsDictionary)
     
     Task {
       for item in itemsToUpload {
         await addUploadTask(options: item)
       }
+      NSLog("RNReliableUploader finished tasks add")
+      resolver(true)
     }
     
 	}
@@ -57,7 +59,6 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
     let task = session.uploadTask(with: request, fromFile: fileLocalPath)
     if (fileSize != nil) {
       task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!) * 1.5)
-      NSLog("RNReliableUploader task.countOfBytesClientExpectsToSend \(task.countOfBytesClientExpectsToSend)")
     }
     task.taskDescription = options.fileId
     task.resume()

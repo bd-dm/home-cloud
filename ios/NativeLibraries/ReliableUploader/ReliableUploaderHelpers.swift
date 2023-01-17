@@ -50,7 +50,7 @@ class ReliableUploaderHelpers: NSObject {
       }
     }
     
-    let attributes = try? FileManager.default.attributesOfItem(atPath: fileLocalPath.absoluteString)
+    let attributes = try? FileManager.default.attributesOfItem(atPath: fileLocalPath.path)
     if (attributes != nil) {
       fileSize = attributes![FileAttributeKey.size] as! UInt64?
     }
