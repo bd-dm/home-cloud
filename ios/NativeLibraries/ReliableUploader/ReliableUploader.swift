@@ -1,115 +1,65 @@
 import Foundation
 import Photos
 
-@objc(UploadOptions)
-class UploadOptions: NSObject {
-  var url: String
-	var method: String
-	var fileId: String
-	var field: String
-	var headers: [String: String]?
-	
-	@objc init(url: String, method: String, fileId: String, field: String, headers: [String: String]?) {
-		self.url = url
-		self.method = method
-		self.fileId = fileId
-		self.field = field
-		self.headers = headers
-	}
-}
-
 @objc(ReliableUploader)
 class ReliableUploader: NSObject, URLSessionTaskDelegate {
-	static let instance = ReliableUploader()
-
-	var items: [UploadOptions] = []
-	var session: URLSession? = nil
-
-  func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-    let uploadProgress = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
-    let uploadProgressPercent = Int(uploadProgress * 100)
+  let sessionId = "com.bd-dm.homecloud"
+  
+  private lazy var session: URLSession = {
+    let configuration = URLSessionConfiguration.background(withIdentifier: sessionId)
     
-    if (uploadProgressPercent == 100) {
-      NSLog("RNReliableUploader uploaded \(task.taskDescription ?? "")")
-    }
+    configuration.isDiscretionary = true
+    configuration.allowsExpensiveNetworkAccess = true
+    configuration.shouldUseExtendedBackgroundIdleMode = true
+    configuration.sessionSendsLaunchEvents = true
+    
+    return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+  }()
+  
+  @objc static func requiresMainQueueSetup() -> Bool {
+    return false
   }
 
-	@objc static func requiresMainQueueSetup() -> Bool {
-  	return false
-	}
+  func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+    if (bytesSent != totalBytesExpectedToSend) {
+      return
+    }
+    
+    NSLog("RNReliableUploader \(task.taskDescription ?? "NIL") (\(totalBytesSent) / \(totalBytesExpectedToSend))")
+    
+    let urlPath: String = "http://192.168.0.103:8082/finished?id=\(task.taskDescription ?? "NIL")"
+    let url = URL(string: urlPath)!
+    let request = URLRequest(url: url)
+    let connection = NSURLConnection(request: request, delegate: self)!
+    connection.start()
+  }
   
-  @objc func uploadItems(_ itemsToUpload: [NSDictionary]) {
+  @objc func uploadItems(_ optionsDictionary: [NSDictionary]) {
+    let itemsToUpload = ReliableUploaderHelpers.dictionaryToOptionsArray(optionsDictionary)
+    
     Task {
-      var items: [UploadOptions] = []
-      
-      for dictionary in itemsToUpload {
-        let optionsDict = dictionary as? [String:String]
-        let headers = optionsDict?["headers"] as? [String: String]
-        
-        let options = UploadOptions(
-          url: optionsDict?["url"] ?? "",
-          method: optionsDict?["method"] ?? "",
-          fileId: optionsDict?["fileId"] ?? "",
-          field: optionsDict?["field"] ?? "",
-          headers: headers
-        );
-        
-        items.append(options)
-      }
-      
-      let identifier = "com.reliableuploader"
-      let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
-      
-      session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-
-      var uploadTasks: [URLSessionUploadTask] = []
-      for item in items {
-        let task = await upload(item: item)
-        
-        if (task != nil) {
-          uploadTasks.append(task!)
-        }
-      }
-      
-      for task in uploadTasks {
-        task.resume()
+      for item in itemsToUpload {
+        await addUploadTask(options: item)
       }
     }
+    
 	}
 
-  func upload(item: UploadOptions) async -> URLSessionUploadTask? {
-		let url = URL(string: item.url)!
-    let asset = PHAsset.fetchAssets(withLocalIdentifiers: [item.fileId], options: nil).firstObject
-    let resourceManager = PHAssetResourceManager.default()
-    let resource = PHAssetResource.assetResources(for: asset!).first!
-    let fileName = resource.originalFilename
-    var fileLocalPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
-
-    do {
-      try await resourceManager.writeData(for: resource, toFile: fileLocalPath, options: nil)
-    } catch {
-      let options = PHContentEditingInputRequestOptions()
-      options.isNetworkAccessAllowed = false
-
-      asset?.requestContentEditingInput(with: options) { (contentEditingInput, info) in
-        let imageURL = contentEditingInput?.fullSizeImageURL
-        fileLocalPath = imageURL?.absoluteURL ?? imageURL ?? fileLocalPath
-      }
-    }
-
+  func addUploadTask(options: UploadOptions) async {
+		let url = URL(string: options.url)!
+    let (fileName, fileSize, fileLocalPath) = await ReliableUploaderHelpers.getAssetData(localIdentifier: options.fileId)
+    
 		var request = URLRequest(url: url, timeoutInterval: 60 * 60 * 24)
-		request.httpMethod = item.method
-    request.allHTTPHeaderFields = item.headers
-    request.setValue(fileName, forHTTPHeaderField: "fileName")
+		request.httpMethod = options.method
+    request.allHTTPHeaderFields = options.headers
+    request.setValue("attachment; filename=\"\(fileName)\"", forHTTPHeaderField: "Content-Disposition")
 
-    do {
-      let task = try session?.uploadTask(with: request, fromFile: fileLocalPath)
-      task?.taskDescription = item.fileId
-
-      return task
-    } catch {
-      NSLog("RNReliableUploader error \(error)")
-      return nil
+    let task = session.uploadTask(with: request, fromFile: fileLocalPath)
+    if (fileSize != nil) {
+      task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!) * 1.5)
+      NSLog("RNReliableUploader task.countOfBytesClientExpectsToSend \(task.countOfBytesClientExpectsToSend)")
     }
+    task.taskDescription = options.fileId
+    task.resume()
 	}
 }

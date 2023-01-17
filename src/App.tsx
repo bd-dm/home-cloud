@@ -56,7 +56,7 @@ const App: FC = () => {
   const fetchPhotos = async () => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
       assetType: 'All',
-      first: 100,
+      first: 9999999,
     });
 
     setFiles(photosFromRoll);
@@ -65,41 +65,13 @@ const App: FC = () => {
   const uploadPhotos = async () => {
     setIsLoading(true);
 
-    // let taskId = await ReliableUploader.backgroundTask.start();
-    //
-    // ReliableUploader.on(ReliableUploaderEvent.Expired, data => {
-    //   console.log('BG EXPIRED!', data.id, 'current?', data.id === taskId);
-    // });
-    //
-    // ReliableUploader.on(ReliableUploaderEvent.Error, data => {
-    //   console.log('BG ERROR!', data.id, 'current?', data.id === taskId);
-    // });
-    //
-    // // listen for other ReliableUploader events
-    // ReliableUploader.on(ReliableUploaderEvent.ProgressUpdated, data => {
-    //   console.log(
-    //     'BG ProgressUpdated!',
-    //     data.id,
-    //     'current?',
-    //     data.id === taskId,
-    //   );
-    // });
-    //
-    // ReliableUploader.on(ReliableUploaderEvent.Completed, data => {
-    //   console.log('BG Completed!', data.id, 'current?', data.id === taskId);
-    // });
-    //
-    // ReliableUploader.on(ReliableUploaderEvent.Cancelled, data => {
-    //   console.log('BG CANCELLED!', data.id, 'current?', data.id === taskId);
-    // });
-
     const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
       files.map(file => getOptionsForUpload(file)),
     );
 
     console.log(`Uploading ${itemsToUpload.length} items`);
 
-    ReliableUploader.upload(itemsToUpload);
+    await ReliableUploader.upload(itemsToUpload);
 
     setIsLoading(false);
   };
