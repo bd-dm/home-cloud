@@ -1,43 +1,37 @@
 import React, {FC, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Button,
   FlatList,
-  Platform,
   SafeAreaView,
   StatusBar,
+  View,
 } from 'react-native';
 import {
   CameraRoll,
   PhotoIdentifier,
 } from '@react-native-camera-roll/camera-roll';
 import {PhotoRow, PhotosRow} from './components';
-import {
-  ReliableUploader,
-  ReliableUploaderEvent,
-  ReliableUploaderOptions,
-} from '../native-bridges';
+import {ReliableUploader, ReliableUploaderOptions} from '../native-bridges';
 
-const UPLOAD_URL = 'https://webhook.site/7da8f8bc-6eba-4e04-8f26-e417f36784c2';
+const UPLOAD_URL = 'http://192.168.0.103:8080/upload';
 
 const getOptionsForUpload = async (
-  uri: string,
+  file: PhotoIdentifier,
 ): Promise<ReliableUploaderOptions> => {
-  const filePath =
-    Platform.OS === 'ios'
-      ? // @ts-ignore
-        (await CameraRoll.iosGetImageDataById(uri)).node.image.filepath
-      : uri;
+  const fileId = file.node.image.uri.split('/')[2];
 
   return {
     url: UPLOAD_URL,
     method: 'POST',
-    filePath,
+    fileId,
     field: 'file',
   };
 };
 
 const App: FC = () => {
-  const [photos, setPhotos] = useState<PhotoIdentifier[]>([]);
+  const [files, setFiles] = useState<PhotoIdentifier[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     (async () => await fetchPhotos())();
@@ -46,45 +40,79 @@ const App: FC = () => {
   const imageRows = useMemo(() => {
     const rows: PhotoRow[] = [];
 
-    for (let i = 0; i < photos.length; i += 3) {
+    for (let i = 0; i < files.length; i += 3) {
       rows.push([
-        {uri: photos[i]?.node?.image?.uri},
-        {uri: photos[i + 1]?.node?.image?.uri},
-        {uri: photos[i + 2]?.node?.image?.uri},
+        {uri: files[i]?.node?.image?.uri},
+        {uri: files[i + 1]?.node?.image?.uri},
+        {uri: files[i + 2]?.node?.image?.uri},
       ]);
     }
 
     return rows;
-  }, [photos]);
+  }, [files]);
 
   const fetchPhotos = async () => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
-      assetType: 'All',
-      first: 999999999,
+      assetType: 'Videos',
+      first: 25,
     });
-    setPhotos(photosFromRoll);
+
+    setFiles(photosFromRoll);
   };
 
   const uploadPhotos = async () => {
-    let taskId = await ReliableUploader.backgroundTask.start();
+    setIsLoading(true);
 
-    ReliableUploader.on(ReliableUploaderEvent.Expired, data => {
-      console.log('BG EXPIRED!', data.id, 'current?', data.id === taskId);
-    });
+    // let taskId = await ReliableUploader.backgroundTask.start();
+    //
+    // ReliableUploader.on(ReliableUploaderEvent.Expired, data => {
+    //   console.log('BG EXPIRED!', data.id, 'current?', data.id === taskId);
+    // });
+    //
+    // ReliableUploader.on(ReliableUploaderEvent.Error, data => {
+    //   console.log('BG ERROR!', data.id, 'current?', data.id === taskId);
+    // });
+    //
+    // // listen for other ReliableUploader events
+    // ReliableUploader.on(ReliableUploaderEvent.ProgressUpdated, data => {
+    //   console.log(
+    //     'BG ProgressUpdated!',
+    //     data.id,
+    //     'current?',
+    //     data.id === taskId,
+    //   );
+    // });
+    //
+    // ReliableUploader.on(ReliableUploaderEvent.Completed, data => {
+    //   console.log('BG Completed!', data.id, 'current?', data.id === taskId);
+    // });
+    //
+    // ReliableUploader.on(ReliableUploaderEvent.Cancelled, data => {
+    //   console.log('BG CANCELLED!', data.id, 'current?', data.id === taskId);
+    // });
 
-    const upload = async (uri: string) => {
-      try {
-        await ReliableUploader.upload(await getOptionsForUpload(uri));
-      } catch (e) {}
-    };
+    const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
+      files.map(file => getOptionsForUpload(file)),
+    );
 
-    await Promise.allSettled(photos.map(photo => upload(photo.node.image.uri)));
+    console.log(`Uploading ${itemsToUpload.length} items`);
+
+    ReliableUploader.upload(itemsToUpload);
+
+    setIsLoading(false);
   };
 
   return (
     <SafeAreaView>
       <StatusBar />
-      <Button title={'Start uploading'} onPress={uploadPhotos} />
+      <View
+        style={{padding: 10, alignItems: 'center', justifyContent: 'center'}}>
+        {isLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <Button title={'Start uploading'} onPress={uploadPhotos} />
+        )}
+      </View>
       <FlatList
         data={imageRows}
         renderItem={row => <PhotosRow key={row.index} row={row.item} />}

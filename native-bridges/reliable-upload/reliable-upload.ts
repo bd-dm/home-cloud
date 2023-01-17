@@ -1,7 +1,6 @@
 import {NativeEventEmitter, EmitterSubscription} from 'react-native';
 import {eventPrefix, nativeModule} from './constants';
 import {
-  BackgroundTaskId,
   ReliableUploaderEvent,
   ReliableUploaderOptions,
   ReliableUploaderTask,
@@ -19,27 +18,16 @@ const on = (
   });
 };
 
-const upload = (options: ReliableUploaderOptions): Promise<UploadId> =>
-  nativeModule.upload(options);
+const upload = (items: ReliableUploaderOptions[]): Promise<UploadId[]> =>
+  nativeModule.uploadItems(items);
 
 const cancel = (uploadId: string): Promise<boolean> =>
-  nativeModule.cancel(uploadId);
-
-const canSuspend = (): Promise<boolean> => nativeModule.canSuspend();
-
-const backgroundTask = {
-  getRemainingTime: (): Promise<number> =>
-    nativeModule.bgTaskGetRemainingTime(),
-  start: (): Promise<BackgroundTaskId> => nativeModule.bgTaskStart(),
-  end: (id: BackgroundTaskId): Promise<void> => nativeModule.bgTaskEnd(id),
-};
+  nativeModule.uploadItems(uploadId);
 
 const ReliableUploader = {
   upload,
   cancel,
   on,
-  canSuspend,
-  backgroundTask,
 };
 
 export {ReliableUploader};
