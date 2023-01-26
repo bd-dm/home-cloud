@@ -30,19 +30,20 @@ class ReliableUploaderHelpers: NSObject {
     return optionsResult
   }
   
-  static func getAssetData(localIdentifier: String) async -> (String, UInt64?, URL) {
+  static func getAssetData(localIdentifier: String) async -> (String, UInt64?, Date?, URL) {
     let asset = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil).firstObject
     let resourceManager = PHAssetResourceManager.default()
     let resource = PHAssetResource.assetResources(for: asset!).first!
     let fileName = resource.originalFilename
     var fileLocalPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
     var fileSize: UInt64? = nil
+    let creationDate = asset?.creationDate
 
     do {
       try await resourceManager.writeData(for: resource, toFile: fileLocalPath, options: nil)
     } catch {
       let options = PHContentEditingInputRequestOptions()
-      options.isNetworkAccessAllowed = false
+      options.isNetworkAccessAllowed = true
 
       asset?.requestContentEditingInput(with: options) { (contentEditingInput, info) in
         let imageURL = contentEditingInput?.fullSizeImageURL
@@ -55,6 +56,6 @@ class ReliableUploaderHelpers: NSObject {
       fileSize = attributes![FileAttributeKey.size] as! UInt64?
     }
     
-    return (fileName, fileSize, fileLocalPath)
+    return (fileName, fileSize, creationDate, fileLocalPath)
   }
 }

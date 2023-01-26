@@ -8,7 +8,7 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
   private lazy var session: URLSession = {
     let configuration = URLSessionConfiguration.background(withIdentifier: sessionId)
     
-    configuration.isDiscretionary = true
+    configuration.isDiscretionary = false
     configuration.allowsExpensiveNetworkAccess = true
     configuration.shouldUseExtendedBackgroundIdleMode = true
     configuration.sessionSendsLaunchEvents = true
@@ -25,13 +25,7 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
       return
     }
     
-    NSLog("RNReliableUploader \(task.taskDescription ?? "NIL") (\(totalBytesSent) / \(totalBytesExpectedToSend))")
-    
-    let urlPath: String = "http://192.168.0.103:8082/finished?id=\(task.taskDescription ?? "NIL")"
-    let url = URL(string: urlPath)!
-    let request = URLRequest(url: url)
-    let connection = NSURLConnection(request: request, delegate: self)!
-    connection.start()
+    NSLog("RNReliableUploader: task \(task.taskDescription ?? "NIL") finished")
   }
   
   @objc func uploadItems(_ optionsDictionary: [NSDictionary], resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
@@ -41,26 +35,28 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
       for item in itemsToUpload {
         await addUploadTask(options: item)
       }
-      NSLog("RNReliableUploader finished tasks add")
       resolver(true)
     }
-    
 	}
 
   func addUploadTask(options: UploadOptions) async {
 		let url = URL(string: options.url)!
-    let (fileName, fileSize, fileLocalPath) = await ReliableUploaderHelpers.getAssetData(localIdentifier: options.fileId)
+    let (fileName, fileSize, fileCreationDate, fileLocalPath) = await ReliableUploaderHelpers.getAssetData(localIdentifier: options.fileId)
+    
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "EEEE, dd LLL yyyy HH:mm:ss zzz"
+    let lastModified = dateFormatter.string(from: fileCreationDate ?? Date(timeIntervalSince1970: 0))
     
 		var request = URLRequest(url: url, timeoutInterval: 60 * 60 * 24)
 		request.httpMethod = options.method
     request.allHTTPHeaderFields = options.headers
     request.setValue("attachment; filename=\"\(fileName)\"", forHTTPHeaderField: "Content-Disposition")
+    request.setValue(lastModified, forHTTPHeaderField: "Last-Modified")
 
     let task = session.uploadTask(with: request, fromFile: fileLocalPath)
     if (fileSize != nil) {
-      task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!) * 1.5)
+      task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!))
     }
     task.taskDescription = options.fileId
-    task.resume()
 	}
 }

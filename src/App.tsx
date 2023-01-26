@@ -15,7 +15,8 @@ import {PhotoRow, PhotosRow} from './components';
 import {ReliableUploader, ReliableUploaderOptions} from '../native-bridges';
 import {getFilePath} from './utils';
 
-const UPLOAD_URL = 'http://192.168.0.103:8080/upload';
+const UPLOAD_URL = 'http://192.168.0.103:3001/files';
+// const UPLOAD_URL = 'https://home-cloud-server.bd-dm.site/files';
 
 const getOptionsForUpload = async (
   file: PhotoIdentifier,
@@ -56,7 +57,7 @@ const App: FC = () => {
   const fetchPhotos = async () => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
       assetType: 'All',
-      first: 9999999,
+      first: 99999999,
     });
 
     setFiles(photosFromRoll);
