@@ -1,19 +1,15 @@
 import React, {FC, useEffect, useMemo, useState} from 'react';
-import {
-  ActivityIndicator,
-  Button,
-  FlatList,
-  SafeAreaView,
-  StatusBar,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Button, FlatList, View} from 'react-native';
 import {
   CameraRoll,
   PhotoIdentifier,
 } from '@react-native-camera-roll/camera-roll';
-import {PhotoRow, PhotosRow} from './components';
-import {ReliableUploader, ReliableUploaderOptions} from '../native-bridges';
-import {getFilePath} from './utils';
+import {PhotoRow, PhotosRow} from '../../components';
+import {
+  ReliableUploader,
+  ReliableUploaderOptions,
+} from '../../../native-bridges';
+import {getFilePath} from '../../utils';
 
 const UPLOAD_URL = 'http://192.168.0.103:3001/files';
 // const UPLOAD_URL = 'https://home-cloud-server.bd-dm.site/files';
@@ -32,7 +28,7 @@ const getOptionsForUpload = async (
   };
 };
 
-const App: FC = () => {
+export const RollPage: FC = () => {
   const [files, setFiles] = useState<PhotoIdentifier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -78,8 +74,7 @@ const App: FC = () => {
   };
 
   return (
-    <SafeAreaView>
-      <StatusBar />
+    <View>
       <View
         style={{padding: 10, alignItems: 'center', justifyContent: 'center'}}>
         {isLoading ? (
@@ -92,8 +87,6 @@ const App: FC = () => {
         data={imageRows}
         renderItem={row => <PhotosRow key={row.index} row={row.item} />}
       />
-    </SafeAreaView>
+    </View>
   );
 };
-
-export default App;
