@@ -15,7 +15,7 @@ index.ts
 middleware.ts
 models/AppleAuthRequestDto.ts
 models/AppleAuthResponseDto.ts
-models/CreateFileResponseDto.ts
+models/FileResponseDto.ts
 models/ObjectSerializer.ts
 models/all.ts
 package.json

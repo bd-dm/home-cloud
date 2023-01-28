@@ -15,6 +15,8 @@ import type {ReliableUploaderOptions} from '../../../native-bridges';
 import {ReliableUploader} from '../../../native-bridges';
 import {getFilePath} from '../../utils';
 import {useAuthContext} from '../../contexts';
+import {filesApi} from '../../api';
+import type {FileResponseDto} from '../../api/generated';
 
 const UPLOAD_URL = 'http://192.168.0.103:3001/files';
 // const UPLOAD_URL = 'https://home-cloud-server.bd-dm.site/files';
@@ -34,12 +36,16 @@ const getOptionsForUpload = async (
 };
 
 export const RollPage: FC = () => {
+  const [uploadedFiles, setUploadedFiles] = useState<FileResponseDto[]>([]);
   const [files, setFiles] = useState<PhotoIdentifier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const {logout} = useAuthContext();
 
   useEffect(() => {
-    (async () => await fetchPhotos())();
+    (async () => {
+      await getUploadedFiles();
+      await fetchFiles();
+    })();
   }, []);
 
   const imageRows = useMemo(() => {
@@ -56,7 +62,12 @@ export const RollPage: FC = () => {
     return rows;
   }, [files]);
 
-  const fetchPhotos = async () => {
+  const getUploadedFiles = async () => {
+    const response = await filesApi.filesControllerFindAll();
+    setUploadedFiles(response);
+  };
+
+  const fetchFiles = async () => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
       assetType: 'All',
       first: 99999999,
@@ -65,19 +76,23 @@ export const RollPage: FC = () => {
     setFiles(photosFromRoll);
   };
 
-  const uploadPhotos = async () => {
-    setIsLoading(true);
+  const uploadFiles = async () => {
+    try {
+      setIsLoading(true);
 
-    const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
-      files.map(file => getOptionsForUpload(file)),
-    );
+      const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
+        files.map(file => getOptionsForUpload(file)),
+      );
 
-    console.log(`Uploading ${itemsToUpload.length} items`);
-
-    await ReliableUploader.upload(itemsToUpload);
-
-    setIsLoading(false);
+      await ReliableUploader.upload(itemsToUpload);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  console.log(uploadedFiles);
 
   return (
     <View
@@ -99,7 +114,7 @@ export const RollPage: FC = () => {
           <Button
             title={'Start uploading'}
             color={PlatformColor('label')}
-            onPress={uploadPhotos}
+            onPress={uploadFiles}
           />
         )}
         <Button

@@ -12,7 +12,7 @@ import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
 import type {SecurityAuthentication} from '../auth/auth';
 
-import type {CreateFileResponseDto} from '../models/CreateFileResponseDto';
+import type {FileResponseDto} from '../models/FileResponseDto';
 
 /**
  * no description
@@ -115,26 +115,26 @@ export class FilesApiResponseProcessor {
    */
   public async filesControllerCreate(
     response: ResponseContext,
-  ): Promise<CreateFileResponseDto> {
+  ): Promise<FileResponseDto> {
     const contentType = ObjectSerializer.normalizeMediaType(
       response.headers['content-type'],
     );
     if (isCodeInRange('200', response.httpStatusCode)) {
-      const body: CreateFileResponseDto = ObjectSerializer.deserialize(
+      const body: FileResponseDto = ObjectSerializer.deserialize(
         ObjectSerializer.parse(await response.body.text(), contentType),
-        'CreateFileResponseDto',
+        'FileResponseDto',
         '',
-      ) as CreateFileResponseDto;
+      ) as FileResponseDto;
       return body;
     }
 
     // Work around for missing responses in specification, e.g. for petstore.yaml
     if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-      const body: CreateFileResponseDto = ObjectSerializer.deserialize(
+      const body: FileResponseDto = ObjectSerializer.deserialize(
         ObjectSerializer.parse(await response.body.text(), contentType),
-        'CreateFileResponseDto',
+        'FileResponseDto',
         '',
-      ) as CreateFileResponseDto;
+      ) as FileResponseDto;
       return body;
     }
 
@@ -155,26 +155,26 @@ export class FilesApiResponseProcessor {
    */
   public async filesControllerFindAll(
     response: ResponseContext,
-  ): Promise<Array<CreateFileResponseDto>> {
+  ): Promise<Array<FileResponseDto>> {
     const contentType = ObjectSerializer.normalizeMediaType(
       response.headers['content-type'],
     );
     if (isCodeInRange('200', response.httpStatusCode)) {
-      const body: Array<CreateFileResponseDto> = ObjectSerializer.deserialize(
+      const body: Array<FileResponseDto> = ObjectSerializer.deserialize(
         ObjectSerializer.parse(await response.body.text(), contentType),
-        'Array<CreateFileResponseDto>',
+        'Array<FileResponseDto>',
         '',
-      ) as Array<CreateFileResponseDto>;
+      ) as Array<FileResponseDto>;
       return body;
     }
 
     // Work around for missing responses in specification, e.g. for petstore.yaml
     if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-      const body: Array<CreateFileResponseDto> = ObjectSerializer.deserialize(
+      const body: Array<FileResponseDto> = ObjectSerializer.deserialize(
         ObjectSerializer.parse(await response.body.text(), contentType),
-        'Array<CreateFileResponseDto>',
+        'Array<FileResponseDto>',
         '',
-      ) as Array<CreateFileResponseDto>;
+      ) as Array<FileResponseDto>;
       return body;
     }
 

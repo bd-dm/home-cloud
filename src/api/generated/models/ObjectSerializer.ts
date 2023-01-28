@@ -1,10 +1,10 @@
 export * from '../models/AppleAuthRequestDto';
 export * from '../models/AppleAuthResponseDto';
-export * from '../models/CreateFileResponseDto';
+export * from '../models/FileResponseDto';
 
 import {AppleAuthRequestDto} from '../models/AppleAuthRequestDto';
 import {AppleAuthResponseDto} from '../models/AppleAuthResponseDto';
-import {CreateFileResponseDto} from '../models/CreateFileResponseDto';
+import {FileResponseDto} from '../models/FileResponseDto';
 
 /* tslint:disable:no-unused-variable */
 let primitives = [
@@ -29,7 +29,7 @@ let enumsMap: Set<string> = new Set<string>([]);
 let typeMap: {[index: string]: any} = {
   AppleAuthRequestDto: AppleAuthRequestDto,
   AppleAuthResponseDto: AppleAuthResponseDto,
-  CreateFileResponseDto: CreateFileResponseDto,
+  FileResponseDto: FileResponseDto,
 };
 
 export class ObjectSerializer {

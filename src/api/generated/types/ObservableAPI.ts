@@ -6,7 +6,7 @@ import {of, from} from '../rxjsStub';
 import {mergeMap, map} from '../rxjsStub';
 import type {AppleAuthRequestDto} from '../models/AppleAuthRequestDto';
 import type {AppleAuthResponseDto} from '../models/AppleAuthResponseDto';
-import type {CreateFileResponseDto} from '../models/CreateFileResponseDto';
+import type {FileResponseDto} from '../models/FileResponseDto';
 
 import {AuthApiRequestFactory, AuthApiResponseProcessor} from '../apis/AuthApi';
 export class ObservableAuthApi {
@@ -95,7 +95,7 @@ export class ObservableFilesApi {
   public filesControllerCreate(
     body: any,
     _options?: Configuration,
-  ): Observable<CreateFileResponseDto> {
+  ): Observable<FileResponseDto> {
     const requestContextPromise = this.requestFactory.filesControllerCreate(
       body,
       _options,
@@ -134,7 +134,7 @@ export class ObservableFilesApi {
    */
   public filesControllerFindAll(
     _options?: Configuration,
-  ): Observable<Array<CreateFileResponseDto>> {
+  ): Observable<Array<FileResponseDto>> {
     const requestContextPromise =
       this.requestFactory.filesControllerFindAll(_options);
 

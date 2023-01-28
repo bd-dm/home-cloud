@@ -3,7 +3,7 @@ import type {Configuration} from '../configuration';
 
 import type {AppleAuthRequestDto} from '../models/AppleAuthRequestDto';
 import type {AppleAuthResponseDto} from '../models/AppleAuthResponseDto';
-import type {CreateFileResponseDto} from '../models/CreateFileResponseDto';
+import type {FileResponseDto} from '../models/FileResponseDto';
 import {ObservableAuthApi} from './ObservableAPI';
 
 import type {
@@ -64,7 +64,7 @@ export class PromiseFilesApi {
   public filesControllerCreate(
     body: any,
     _options?: Configuration,
-  ): Promise<CreateFileResponseDto> {
+  ): Promise<FileResponseDto> {
     const result = this.api.filesControllerCreate(body, _options);
     return result.toPromise();
   }
@@ -73,7 +73,7 @@ export class PromiseFilesApi {
    */
   public filesControllerFindAll(
     _options?: Configuration,
-  ): Promise<Array<CreateFileResponseDto>> {
+  ): Promise<Array<FileResponseDto>> {
     const result = this.api.filesControllerFindAll(_options);
     return result.toPromise();
   }
