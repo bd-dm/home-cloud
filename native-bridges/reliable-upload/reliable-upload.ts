@@ -21,17 +21,13 @@ const on = (
 const upload = async (items: ReliableUploaderOptions[]): Promise<boolean> =>
   nativeModule.uploadItems(items);
 
-type FilePath = string;
-const getAssetPath = async (fileId: string): Promise<FilePath> =>
-  nativeModule.getAssetPath(fileId);
-
+type FileId = string;
 type FileHash = string;
-const getFileHash = async (filePath: string): Promise<FileHash> =>
-  nativeModule.getFileHash(filePath);
+const getFileHash = async (fileId: FileId): Promise<FileHash> =>
+  nativeModule.getFileHash(fileId);
 
 const ReliableUploader = {
   upload,
-  getAssetPath,
   getFileHash,
   on,
 };

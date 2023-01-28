@@ -15,43 +15,66 @@ class ReliableUploaderHelpers: NSObject {
     for dictionary in dictionary {
       let optionsDict = dictionary as? [String:Any]
       let headers = optionsDict?["headers"]
-      
+
       let options = UploadOptions(
         url: optionsDict?["url"] as? String ?? "",
         method: optionsDict?["method"] as? String ?? "",
-        filePath: optionsDict?["filePath"] as? String ?? "",
+        fileId: optionsDict?["fileId"] as? String ?? "",
         field: optionsDict?["field"] as? String ?? "",
         headers: headers as? [String: String]
       );
-      
+
       optionsResult.append(options)
     }
 
     return optionsResult
   }
-  
-  static func moveAssetToFile(localIdentifier: String) async -> String {
-    let asset = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil).firstObject
-    
-    let resourceManager = PHAssetResourceManager.default()
+
+  static func getAssetFilePath(localIdentifier: String) async -> URL
+  {
+    let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+    let asset = assets.firstObject
     let resource = PHAssetResource.assetResources(for: asset!).first!
-    
     let fileName = resource.originalFilename
-    var filePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
-
-    do {
-      try await resourceManager.writeData(for: resource, toFile: filePath, options: nil)
-    } catch {
-      let options = PHContentEditingInputRequestOptions()
-      options.isNetworkAccessAllowed = true
-
-      asset?.requestContentEditingInput(with: options) { (contentEditingInput, info) in
-        let imageURL = contentEditingInput?.fullSizeImageURL
-        filePath = imageURL?.absoluteURL ?? imageURL ?? filePath
-      }
-    }
     
-    return filePath.absoluteString
+    let options = PHContentEditingInputRequestOptions()
+    options.isNetworkAccessAllowed = true
+  
+    if (resource.type == PHAssetResourceType.video) {
+      let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+      let destURL = documentsURL.appendingPathComponent(fileName)
+      if (FileManager.default.fileExists(atPath: destURL.path)) {
+        return destURL
+      }
+      
+      let fileUrl = await withUnsafeContinuation { continuation in
+        PHImageManager.default().requestAVAsset(forVideo: asset!, options: nil) { (avAsset, audioMix, info) in
+          let videoUrl = ((avAsset as! AVURLAsset).url as NSURL).fileReferenceURL()
+          continuation.resume(returning: videoUrl)
+        }
+      }!
+      
+      try! FileManager.default.copyItem(at: fileUrl, to: destURL)
+      
+      return destURL
+    } else {
+      let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+      let destURL = documentsURL.appendingPathComponent(fileName)
+      if (FileManager.default.fileExists(atPath: destURL.path)) {
+        return destURL
+      }
+      
+      let fileUrl = await withUnsafeContinuation { continuation in
+        asset?.requestContentEditingInput(with: options) { (contentEditingInput, info) in
+          let imageUrl = contentEditingInput?.fullSizeImageURL
+          continuation.resume(returning: imageUrl!)
+        }
+      }
+      
+      try! FileManager.default.copyItem(at: fileUrl, to: destURL)
+      
+      return destURL
+    }
   }
   
   static func getFileInfo(filePath: String) async -> AssetFileInfo {
@@ -61,8 +84,7 @@ class ReliableUploaderHelpers: NSObject {
     return AssetFileInfo(
       fileName: (filePath as NSString).lastPathComponent,
       fileSize: attributes[FileAttributeKey.size] as! UInt64? ?? 0,
-      creationDate: attributes[FileAttributeKey.creationDate] as! Date? ?? Date(timeIntervalSince1970: 0),
-      filePath: filePath
+      creationDate: attributes[FileAttributeKey.creationDate] as! Date? ?? Date(timeIntervalSince1970: 0)
     )
   }
 }

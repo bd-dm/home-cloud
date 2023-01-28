@@ -29,21 +29,16 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
     NSLog("RNReliableUploader: task \(task.taskDescription ?? "NIL")")
   }
   
-  @objc func getAssetPath(_ fileId: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+  @objc func getFileHash(_ fileId: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock)  {
     Task {
-      let assetFileInfo = await ReliableUploaderHelpers.moveAssetToFile(localIdentifier: fileId)
+      let fileUrl = await ReliableUploaderHelpers.getAssetFilePath(localIdentifier: fileId)
+      let data = try! Data(contentsOf: fileUrl)
       
-      resolver(assetFileInfo)
+      let hashed = SHA256.hash(data: data as NSData)
+      let hashString = hashed.compactMap { String(format: "%02x", $0) }.joined()
+      
+      resolver(hashString)
     }
-  }
-  
-  @objc func getFileHash(_ filePath: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock)  {
-    let data = try! Data(contentsOf: URL(string: filePath)!) as NSData
-    
-    let hashed = SHA256.hash(data: data)
-    let hashString = hashed.compactMap { String(format: "%02x", $0) }.joined()
-    
-    return resolver(hashString)
   }
   
   @objc func uploadItems(_ optionsDictionary: [NSDictionary], resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
@@ -58,8 +53,9 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
 	}
 
   func addUploadTask(options: UploadOptions) async {
-		let url = URL(string: options.url)!
-    let assetFileInfo = await ReliableUploaderHelpers.getFileInfo(filePath: options.filePath)
+    let url = URL(string: options.url)!
+    let fileUrl = await ReliableUploaderHelpers.getAssetFilePath(localIdentifier: options.fileId)
+    let assetFileInfo = await ReliableUploaderHelpers.getFileInfo(filePath: fileUrl.path)
     
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "EEEE, dd LLL yyyy HH:mm:ss zzz"
@@ -71,9 +67,9 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
     request.setValue("attachment; filename=\"\(assetFileInfo.fileName)\"", forHTTPHeaderField: "Content-Disposition")
     request.setValue(lastModified, forHTTPHeaderField: "Last-Modified")
 
-    let task = session.uploadTask(with: request, fromFile: URL(string: assetFileInfo.filePath)!)
+    let task = session.uploadTask(with: request, fromFile: fileUrl)
     task.countOfBytesClientExpectsToSend = Int64(Double(assetFileInfo.fileSize))
-    task.taskDescription = options.filePath
+    task.taskDescription = options.fileId
     task.resume()
 	}
 }

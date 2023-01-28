@@ -9,7 +9,7 @@ enum ReliableUploaderEvent {
 interface ReliableUploaderOptions {
   url: string;
   method: 'PUT' | 'POST';
-  filePath: string;
+  fileId: string;
   field: string;
   headers?: Record<string, string>;
 }

@@ -23,13 +23,13 @@ const UPLOAD_URL = `${config.api.host}/files`;
 type LocalFile = PhotoIdentifier;
 
 const getOptionsForUpload = async (
-  filePath: string,
+  fileId: string,
   token: string,
 ): Promise<ReliableUploaderOptions> => {
   return {
     url: UPLOAD_URL,
     method: 'POST',
-    filePath,
+    fileId,
     field: 'file',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -51,6 +51,13 @@ export const RollPage: FC = () => {
   useEffect(() => {
     (async () => {
       const localFiles = await getLocalFiles();
+      setFiles(
+        localFiles.map(file => ({
+          id: file.node.image.uri,
+          uri: file.node.image.uri,
+        })),
+      );
+
       await prepareFiles(localFiles);
     })();
   }, []);
@@ -71,8 +78,7 @@ export const RollPage: FC = () => {
     const rollFiles: RollFile[] = await Promise.all(
       localFiles.map(async file => {
         const fileId = getFileIdFromUri(file.node.image.uri);
-        const filePath = await ReliableUploader.getAssetPath(fileId);
-        const fileHash = await ReliableUploader.getFileHash(filePath);
+        const fileHash = await ReliableUploader.getFileHash(fileId);
         const uploadedFile = uploadedFiles.find(
           uploadedFileEl => uploadedFileEl.fileHash === fileHash,
         );
@@ -103,8 +109,11 @@ export const RollPage: FC = () => {
     try {
       setIsLoading(true);
 
+      const filesToUpload = files.filter(file => !file.isUploaded);
+      console.log('uploading', filesToUpload.length);
+
       const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
-        files.map(file => getOptionsForUpload(file.id, token!)),
+        filesToUpload.map(file => getOptionsForUpload(file.id, token!)),
       );
 
       await ReliableUploader.upload(itemsToUpload);

@@ -1,8 +1,8 @@
 type RollFile = {
   id: string;
   uri: string;
-  fileHash: string;
-  isUploaded: boolean;
+  fileHash?: string;
+  isUploaded?: boolean;
 };
 
 type PhotoRow =
