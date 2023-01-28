@@ -190,6 +190,7 @@ export class ResponseContext {
     const fileName = this.getParsedHeader('content-disposition').filename || '';
     const contentType = this.headers['content-type'] || '';
     try {
+      // @ts-ignore
       return new File([data], fileName, {type: contentType});
     } catch (error) {
       /** Fallback for when the File constructor is not available */

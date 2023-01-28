@@ -19,7 +19,7 @@ class ReliableUploaderHelpers: NSObject {
       let options = UploadOptions(
         url: optionsDict?["url"] as? String ?? "",
         method: optionsDict?["method"] as? String ?? "",
-        fileId: optionsDict?["fileId"] as? String ?? "",
+        filePath: optionsDict?["filePath"] as? String ?? "",
         field: optionsDict?["field"] as? String ?? "",
         headers: headers as? [String: String]
       );
@@ -30,32 +30,39 @@ class ReliableUploaderHelpers: NSObject {
     return optionsResult
   }
   
-  static func getAssetData(localIdentifier: String) async -> (String, UInt64?, Date?, URL) {
+  static func moveAssetToFile(localIdentifier: String) async -> String {
     let asset = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil).firstObject
+    
     let resourceManager = PHAssetResourceManager.default()
     let resource = PHAssetResource.assetResources(for: asset!).first!
+    
     let fileName = resource.originalFilename
-    var fileLocalPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
-    var fileSize: UInt64? = nil
-    let creationDate = asset?.creationDate
+    var filePath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
 
     do {
-      try await resourceManager.writeData(for: resource, toFile: fileLocalPath, options: nil)
+      try await resourceManager.writeData(for: resource, toFile: filePath, options: nil)
     } catch {
       let options = PHContentEditingInputRequestOptions()
       options.isNetworkAccessAllowed = true
 
       asset?.requestContentEditingInput(with: options) { (contentEditingInput, info) in
         let imageURL = contentEditingInput?.fullSizeImageURL
-        fileLocalPath = imageURL?.absoluteURL ?? imageURL ?? fileLocalPath
+        filePath = imageURL?.absoluteURL ?? imageURL ?? filePath
       }
     }
     
-    let attributes = try? FileManager.default.attributesOfItem(atPath: fileLocalPath.path)
-    if (attributes != nil) {
-      fileSize = attributes![FileAttributeKey.size] as! UInt64?
-    }
+    return filePath.absoluteString
+  }
+  
+  static func getFileInfo(filePath: String) async -> AssetFileInfo {
+    let fileManager = FileManager()
+    let attributes = try! fileManager.attributesOfItem(atPath: filePath)
     
-    return (fileName, fileSize, creationDate, fileLocalPath)
+    return AssetFileInfo(
+      fileName: (filePath as NSString).lastPathComponent,
+      fileSize: attributes[FileAttributeKey.size] as! UInt64? ?? 0,
+      creationDate: attributes[FileAttributeKey.creationDate] as! Date? ?? Date(timeIntervalSince1970: 0),
+      filePath: filePath
+    )
   }
 }

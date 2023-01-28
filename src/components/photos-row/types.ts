@@ -1,7 +1,13 @@
-interface Photo {
+type RollFile = {
+  id: string;
   uri: string;
-}
+  fileHash: string;
+  isUploaded: boolean;
+};
 
-type PhotoRow = [Photo, Photo, Photo] | [Photo, Photo] | [Photo];
+type PhotoRow =
+  | [RollFile, RollFile, RollFile]
+  | [RollFile, RollFile]
+  | [RollFile];
 
-export type {Photo, PhotoRow};
+export type {RollFile, PhotoRow};

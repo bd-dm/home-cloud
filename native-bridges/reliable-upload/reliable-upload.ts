@@ -5,7 +5,6 @@ import type {
   ReliableUploaderEvent,
   ReliableUploaderOptions,
   ReliableUploaderTask,
-  UploadId,
 } from './types';
 
 const on = (
@@ -19,17 +18,21 @@ const on = (
   });
 };
 
-const upload = (
-  items: ReliableUploaderOptions[],
-  token: string,
-): Promise<UploadId[]> => nativeModule.uploadItems(items, token);
+const upload = async (items: ReliableUploaderOptions[]): Promise<boolean> =>
+  nativeModule.uploadItems(items);
 
-const cancel = (uploadId: string): Promise<boolean> =>
-  nativeModule.uploadItems(uploadId);
+type FilePath = string;
+const getAssetPath = async (fileId: string): Promise<FilePath> =>
+  nativeModule.getAssetPath(fileId);
+
+type FileHash = string;
+const getFileHash = async (filePath: string): Promise<FileHash> =>
+  nativeModule.getFileHash(filePath);
 
 const ReliableUploader = {
   upload,
-  cancel,
+  getAssetPath,
+  getFileHash,
   on,
 };
 

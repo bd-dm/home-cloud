@@ -9,10 +9,15 @@ enum ReliableUploaderEvent {
 interface ReliableUploaderOptions {
   url: string;
   method: 'PUT' | 'POST';
-  fileId: string;
-  filePath?: string;
+  filePath: string;
   field: string;
   headers?: Record<string, string>;
+}
+
+interface FileInfo {
+  fileName: string;
+  fileSize: number;
+  creationDate: Date;
 }
 
 interface ReliableUploaderTask {
@@ -28,5 +33,6 @@ export type {
   UploadId,
   ReliableUploaderTask,
   BackgroundTaskId,
+  FileInfo,
   ReliableUploaderOptions,
 };

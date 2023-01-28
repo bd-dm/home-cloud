@@ -4,14 +4,14 @@ import Foundation
 class UploadOptions: NSObject {
   var url: String
   var method: String
-  var fileId: String
+  var filePath: String
   var field: String
   var headers: [String: String]?
   
-  @objc init(url: String, method: String, fileId: String, field: String, headers: [String: String]?) {
+  @objc init(url: String, method: String, filePath: String, field: String, headers: [String: String]?) {
     self.url = url
     self.method = method
-    self.fileId = fileId
+    self.filePath = filePath
     self.field = field
     self.headers = headers
   }

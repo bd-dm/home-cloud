@@ -9,75 +9,94 @@ import {
 } from 'react-native';
 import type {PhotoIdentifier} from '@react-native-camera-roll/camera-roll';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
-import type {PhotoRow} from '../../components';
+import type {PhotoRow, RollFile} from '../../components';
 import {PhotosRow} from '../../components';
 import type {ReliableUploaderOptions} from '../../../native-bridges';
 import {ReliableUploader} from '../../../native-bridges';
-import {getFilePath} from '../../utils';
 import {useAuthContext} from '../../contexts';
 import {filesApi} from '../../api';
-import type {FileResponseDto} from '../../api/generated';
+import {config} from '../../config';
 
-const UPLOAD_URL = 'http://192.168.0.103:3001/files';
+const UPLOAD_URL = `${config.api.host}/files`;
 // const UPLOAD_URL = 'https://home-cloud-server.bd-dm.site/files';
 
-const getOptionsForUpload = async (
-  file: PhotoIdentifier,
-): Promise<ReliableUploaderOptions> => {
-  const fileId = file.node.image.uri.split('/')[2];
+type LocalFile = PhotoIdentifier;
 
+const getOptionsForUpload = async (
+  filePath: string,
+  token: string,
+): Promise<ReliableUploaderOptions> => {
   return {
     url: UPLOAD_URL,
     method: 'POST',
-    fileId,
-    filePath: await getFilePath(file),
+    filePath,
     field: 'file',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   };
 };
 
+const getFileIdFromUri = (uri: string) => {
+  return uri.split('/')[2];
+};
+
 export const RollPage: FC = () => {
-  const [uploadedFiles, setUploadedFiles] = useState<FileResponseDto[]>([]);
-  const [files, setFiles] = useState<PhotoIdentifier[]>([]);
+  const [files, setFiles] = useState<RollFile[]>([]);
+  const [isPrepareReady, setIsPrepareReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const {token, logout} = useAuthContext();
 
   useEffect(() => {
     (async () => {
-      await getUploadedFiles();
-      await fetchFiles();
+      const localFiles = await getLocalFiles();
+      await prepareFiles(localFiles);
     })();
   }, []);
-
-  useEffect(() => {
-    console.log('files on server', uploadedFiles);
-  }, [uploadedFiles]);
 
   const imageRows = useMemo(() => {
     const rows: PhotoRow[] = [];
 
     for (let i = 0; i < files.length; i += 3) {
-      rows.push([
-        {uri: files[i]?.node?.image?.uri},
-        {uri: files[i + 1]?.node?.image?.uri},
-        {uri: files[i + 2]?.node?.image?.uri},
-      ]);
+      rows.push([files[i], files[i + 1], files[i + 2]]);
     }
 
     return rows;
   }, [files]);
 
-  const getUploadedFiles = async () => {
-    const response = await filesApi.filesControllerFindAll();
-    setUploadedFiles(response);
+  const prepareFiles = async (localFiles: LocalFile[]) => {
+    const uploadedFiles = await filesApi.filesControllerFindAll();
+
+    const rollFiles: RollFile[] = await Promise.all(
+      localFiles.map(async file => {
+        const fileId = getFileIdFromUri(file.node.image.uri);
+        const filePath = await ReliableUploader.getAssetPath(fileId);
+        const fileHash = await ReliableUploader.getFileHash(filePath);
+        const uploadedFile = uploadedFiles.find(
+          uploadedFileEl => uploadedFileEl.fileHash === fileHash,
+        );
+
+        return {
+          id: fileId,
+          uri: file.node.image.uri,
+          fileHash,
+          isUploaded: !!uploadedFile,
+        };
+      }),
+    );
+
+    setFiles(rollFiles);
+    setIsPrepareReady(true);
   };
 
-  const fetchFiles = async () => {
+  const getLocalFiles = async (): Promise<LocalFile[]> => {
     const {edges: photosFromRoll} = await CameraRoll.getPhotos({
       assetType: 'All',
       first: 99999999,
     });
 
-    setFiles(photosFromRoll);
+    return photosFromRoll;
   };
 
   const uploadFiles = async () => {
@@ -85,10 +104,10 @@ export const RollPage: FC = () => {
       setIsLoading(true);
 
       const itemsToUpload: ReliableUploaderOptions[] = await Promise.all(
-        files.map(file => getOptionsForUpload(file)),
+        files.map(file => getOptionsForUpload(file.id, token!)),
       );
 
-      await ReliableUploader.upload(itemsToUpload, token!);
+      await ReliableUploader.upload(itemsToUpload);
     } catch (e) {
       console.error(e);
     } finally {
@@ -104,13 +123,13 @@ export const RollPage: FC = () => {
       }}>
       <View
         style={{
-          padding: 10,
+          padding: 5,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-around',
           backgroundColor: PlatformColor('systemBackground'),
         }}>
-        {isLoading ? (
+        {isLoading || !isPrepareReady ? (
           <ActivityIndicator />
         ) : (
           <Button

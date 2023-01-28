@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import CryptoKit
 
 @objc(ReliableUploader)
 class ReliableUploader: NSObject, URLSessionTaskDelegate {
@@ -25,40 +26,54 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
       return
     }
     
-    NSLog("RNReliableUploader: task \(task.taskDescription ?? "NIL") finished")
+    NSLog("RNReliableUploader: task \(task.taskDescription ?? "NIL")")
   }
   
-  @objc func uploadItems(_ optionsDictionary: [NSDictionary], token: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+  @objc func getAssetPath(_ fileId: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+    Task {
+      let assetFileInfo = await ReliableUploaderHelpers.moveAssetToFile(localIdentifier: fileId)
+      
+      resolver(assetFileInfo)
+    }
+  }
+  
+  @objc func getFileHash(_ filePath: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock)  {
+    let data = try! Data(contentsOf: URL(string: filePath)!) as NSData
+    
+    let hashed = SHA256.hash(data: data)
+    let hashString = hashed.compactMap { String(format: "%02x", $0) }.joined()
+    
+    return resolver(hashString)
+  }
+  
+  @objc func uploadItems(_ optionsDictionary: [NSDictionary], resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
     let itemsToUpload = ReliableUploaderHelpers.dictionaryToOptionsArray(optionsDictionary)
     
     Task {
       for item in itemsToUpload {
-        await addUploadTask(options: item, token: token)
+        await addUploadTask(options: item)
       }
       resolver(true)
     }
 	}
 
-  func addUploadTask(options: UploadOptions, token: String) async {
+  func addUploadTask(options: UploadOptions) async {
 		let url = URL(string: options.url)!
-    let (fileName, fileSize, fileCreationDate, fileLocalPath) = await ReliableUploaderHelpers.getAssetData(localIdentifier: options.fileId)
+    let assetFileInfo = await ReliableUploaderHelpers.getFileInfo(filePath: options.filePath)
     
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "EEEE, dd LLL yyyy HH:mm:ss zzz"
-    let lastModified = dateFormatter.string(from: fileCreationDate ?? Date(timeIntervalSince1970: 0))
+    let lastModified = dateFormatter.string(from: assetFileInfo.creationDate)
     
 		var request = URLRequest(url: url, timeoutInterval: 60 * 60 * 24)
 		request.httpMethod = options.method
     request.allHTTPHeaderFields = options.headers
-    request.setValue("attachment; filename=\"\(fileName)\"", forHTTPHeaderField: "Content-Disposition")
-    request.setValue("Bearer \"\(token)\"", forHTTPHeaderField: "Authorization")
+    request.setValue("attachment; filename=\"\(assetFileInfo.fileName)\"", forHTTPHeaderField: "Content-Disposition")
     request.setValue(lastModified, forHTTPHeaderField: "Last-Modified")
 
-    let task = session.uploadTask(with: request, fromFile: fileLocalPath)
-    if (fileSize != nil) {
-      task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!))
-    }
-    task.taskDescription = options.fileId
+    let task = session.uploadTask(with: request, fromFile: URL(string: assetFileInfo.filePath)!)
+    task.countOfBytesClientExpectsToSend = Int64(Double(assetFileInfo.fileSize))
+    task.taskDescription = options.filePath
     task.resume()
 	}
 }
