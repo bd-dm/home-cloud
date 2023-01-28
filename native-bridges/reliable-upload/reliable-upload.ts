@@ -19,8 +19,10 @@ const on = (
   });
 };
 
-const upload = (items: ReliableUploaderOptions[]): Promise<UploadId[]> =>
-  nativeModule.uploadItems(items);
+const upload = (
+  items: ReliableUploaderOptions[],
+  token: string,
+): Promise<UploadId[]> => nativeModule.uploadItems(items, token);
 
 const cancel = (uploadId: string): Promise<boolean> =>
   nativeModule.uploadItems(uploadId);

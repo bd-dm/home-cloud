@@ -28,18 +28,18 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
     NSLog("RNReliableUploader: task \(task.taskDescription ?? "NIL") finished")
   }
   
-  @objc func uploadItems(_ optionsDictionary: [NSDictionary], resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+  @objc func uploadItems(_ optionsDictionary: [NSDictionary], token: String, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
     let itemsToUpload = ReliableUploaderHelpers.dictionaryToOptionsArray(optionsDictionary)
     
     Task {
       for item in itemsToUpload {
-        await addUploadTask(options: item)
+        await addUploadTask(options: item, token: token)
       }
       resolver(true)
     }
 	}
 
-  func addUploadTask(options: UploadOptions) async {
+  func addUploadTask(options: UploadOptions, token: String) async {
 		let url = URL(string: options.url)!
     let (fileName, fileSize, fileCreationDate, fileLocalPath) = await ReliableUploaderHelpers.getAssetData(localIdentifier: options.fileId)
     
@@ -51,6 +51,7 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
 		request.httpMethod = options.method
     request.allHTTPHeaderFields = options.headers
     request.setValue("attachment; filename=\"\(fileName)\"", forHTTPHeaderField: "Content-Disposition")
+    request.setValue("Bearer \"\(token)\"", forHTTPHeaderField: "Authorization")
     request.setValue(lastModified, forHTTPHeaderField: "Last-Modified")
 
     let task = session.uploadTask(with: request, fromFile: fileLocalPath)
@@ -58,5 +59,6 @@ class ReliableUploader: NSObject, URLSessionTaskDelegate {
       task.countOfBytesClientExpectsToSend = Int64(Double(fileSize!))
     }
     task.taskDescription = options.fileId
+    task.resume()
 	}
 }

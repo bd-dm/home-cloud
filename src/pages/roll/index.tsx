@@ -39,7 +39,7 @@ export const RollPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<FileResponseDto[]>([]);
   const [files, setFiles] = useState<PhotoIdentifier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const {logout} = useAuthContext();
+  const {token, logout} = useAuthContext();
 
   useEffect(() => {
     (async () => {
@@ -47,6 +47,10 @@ export const RollPage: FC = () => {
       await fetchFiles();
     })();
   }, []);
+
+  useEffect(() => {
+    console.log('files on server', uploadedFiles);
+  }, [uploadedFiles]);
 
   const imageRows = useMemo(() => {
     const rows: PhotoRow[] = [];
@@ -84,15 +88,13 @@ export const RollPage: FC = () => {
         files.map(file => getOptionsForUpload(file)),
       );
 
-      await ReliableUploader.upload(itemsToUpload);
+      await ReliableUploader.upload(itemsToUpload, token!);
     } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
     }
   };
-
-  console.log(uploadedFiles);
 
   return (
     <View
