@@ -1,4 +1,4 @@
-import * as URLParse from 'url-parse';
+import URLParse from 'url-parse';
 import type {Observable} from '../rxjsStub';
 import {from} from '../rxjsStub';
 
@@ -41,7 +41,7 @@ export type RequestBody = undefined | string | FormData | URLSearchParams;
 export class RequestContext {
   private headers: {[key: string]: string} = {};
   private body: RequestBody = undefined;
-  private url: URLParse;
+  private url: URLParse<Record<string, string | undefined>>;
 
   /**
    * Creates the request context using a http method and request resource url
@@ -49,7 +49,7 @@ export class RequestContext {
    * @param url url of the requested resource
    * @param httpMethod http method
    */
-  public constructor(url: string, private httpMethod: HttpMethod) {
+  constructor(url: string, private httpMethod: HttpMethod) {
     this.url = new URLParse(url, true);
   }
 

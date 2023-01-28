@@ -1903,6 +1903,11 @@
   "resolved" "https://registry.npmjs.org/@types/stack-utils/-/stack-utils-2.0.1.tgz"
   "version" "2.0.1"
 
+"@types/url-parse@^1.4.8":
+  "integrity" "sha512-zqqcGKyNWgTLFBxmaexGUKQyWqeG7HjXj20EuQJSJWwXe54BjX0ihIo5cJB9yAQzH8dNugJ9GvkBYMjPXs/PJw=="
+  "resolved" "https://registry.npmjs.org/@types/url-parse/-/url-parse-1.4.8.tgz"
+  "version" "1.4.8"
+
 "@types/yargs-parser@*":
   "integrity" "sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA=="
   "resolved" "https://registry.npmjs.org/@types/yargs-parser/-/yargs-parser-21.0.0.tgz"
@@ -6205,6 +6210,11 @@
   "integrity" "sha512-slecooA/0tCwhb+RuWEbwLqtKirGh9vWPRpgDfH7uPAraCciqHNH2XjS9ylW+Spn4FUrHg5KWTqUGs9BdBADHg=="
   "resolved" "https://registry.npmjs.org/react-native-config/-/react-native-config-1.5.0.tgz"
   "version" "1.5.0"
+
+"react-native-encrypted-storage@^4.0.3":
+  "integrity" "sha512-0pJA4Aj2S1PIJEbU7pN/Qvf7JIJx3hFywx+i+bLHtgK0/6Zryf1V2xVsWcrD50dfiu3jY1eN2gesQ5osGxE7jA=="
+  "resolved" "https://registry.npmjs.org/react-native-encrypted-storage/-/react-native-encrypted-storage-4.0.3.tgz"
+  "version" "4.0.3"
 
 "react-native-gradle-plugin@^0.71.12":
   "integrity" "sha512-ILujN0C+cX5QHmm22MXbHqZR619OzV/VThLHFhe7qnzZWpPh8O4KSvbtezoYMiBbmowAfy8SQpohwlN3nv6wZQ=="

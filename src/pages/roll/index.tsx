@@ -1,6 +1,12 @@
 import type {FC} from 'react';
 import React, {useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, Button, FlatList, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Button,
+  FlatList,
+  PlatformColor,
+  View,
+} from 'react-native';
 import type {PhotoIdentifier} from '@react-native-camera-roll/camera-roll';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import type {PhotoRow} from '../../components';
@@ -8,6 +14,7 @@ import {PhotosRow} from '../../components';
 import type {ReliableUploaderOptions} from '../../../native-bridges';
 import {ReliableUploader} from '../../../native-bridges';
 import {getFilePath} from '../../utils';
+import {useAuthContext} from '../../contexts';
 
 const UPLOAD_URL = 'http://192.168.0.103:3001/files';
 // const UPLOAD_URL = 'https://home-cloud-server.bd-dm.site/files';
@@ -29,6 +36,7 @@ const getOptionsForUpload = async (
 export const RollPage: FC = () => {
   const [files, setFiles] = useState<PhotoIdentifier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const {logout} = useAuthContext();
 
   useEffect(() => {
     (async () => await fetchPhotos())();
@@ -72,17 +80,37 @@ export const RollPage: FC = () => {
   };
 
   return (
-    <View>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: PlatformColor('systemBackground'),
+      }}>
       <View
-        style={{padding: 10, alignItems: 'center', justifyContent: 'center'}}>
+        style={{
+          padding: 10,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          backgroundColor: PlatformColor('systemBackground'),
+        }}>
         {isLoading ? (
           <ActivityIndicator />
         ) : (
-          <Button title={'Start uploading'} onPress={uploadPhotos} />
+          <Button
+            title={'Start uploading'}
+            color={PlatformColor('label')}
+            onPress={uploadPhotos}
+          />
         )}
+        <Button
+          title={'Logout'}
+          color={PlatformColor('label')}
+          onPress={logout}
+        />
       </View>
       <FlatList
         data={imageRows}
+        style={{backgroundColor: PlatformColor('systemBackground')}}
         renderItem={row => <PhotosRow key={row.index} row={row.item} />}
       />
     </View>
