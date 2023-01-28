@@ -1,14 +1,12 @@
-import React, {FC, useEffect, useMemo, useState} from 'react';
+import type {FC} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, Button, FlatList, View} from 'react-native';
-import {
-  CameraRoll,
-  PhotoIdentifier,
-} from '@react-native-camera-roll/camera-roll';
-import {PhotoRow, PhotosRow} from '../../components';
-import {
-  ReliableUploader,
-  ReliableUploaderOptions,
-} from '../../../native-bridges';
+import type {PhotoIdentifier} from '@react-native-camera-roll/camera-roll';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import type {PhotoRow} from '../../components';
+import {PhotosRow} from '../../components';
+import type {ReliableUploaderOptions} from '../../../native-bridges';
+import {ReliableUploader} from '../../../native-bridges';
 import {getFilePath} from '../../utils';
 
 const UPLOAD_URL = 'http://192.168.0.103:3001/files';

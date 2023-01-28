@@ -1,5 +1,6 @@
-import React, {FC} from 'react';
-import {Photo as PhotoType} from '../../types';
+import type {FC} from 'react';
+import React from 'react';
+import type {Photo as PhotoType} from '../../types';
 import {Image, View} from 'react-native';
 import {styles} from './styles';
 

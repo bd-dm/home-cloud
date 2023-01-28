@@ -1,6 +1,7 @@
-import {NativeEventEmitter, EmitterSubscription} from 'react-native';
+import type {EmitterSubscription} from 'react-native';
+import {NativeEventEmitter} from 'react-native';
 import {eventPrefix, nativeModule} from './constants';
-import {
+import type {
   ReliableUploaderEvent,
   ReliableUploaderOptions,
   ReliableUploaderTask,

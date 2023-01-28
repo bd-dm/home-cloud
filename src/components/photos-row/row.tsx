@@ -1,6 +1,7 @@
-import React, {FC} from 'react';
+import type {FC} from 'react';
+import React from 'react';
 import {View} from 'react-native';
-import {PhotoRow} from './types';
+import type {PhotoRow} from './types';
 import {Photo} from './components/photo';
 import {styles} from './styles';
 

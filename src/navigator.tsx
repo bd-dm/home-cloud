@@ -1,4 +1,5 @@
-import React, {FC} from 'react';
+import type {FC} from 'react';
+import React from 'react';
 import {RollPage} from './pages';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';

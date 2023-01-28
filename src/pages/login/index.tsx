@@ -1,11 +1,12 @@
-import React, {FC} from 'react';
+import type {FC} from 'react';
+import React from 'react';
 import {
   appleAuth,
   AppleButton,
 } from '@invertase/react-native-apple-authentication';
 import {View} from 'react-native';
-import {config} from '../../config';
 import {useAuthContext} from '../../contexts';
+import {authApi} from '../../api';
 
 export const LoginPage: FC = () => {
   const {setToken} = useAuthContext();
@@ -20,20 +21,16 @@ export const LoginPage: FC = () => {
       appleAuthRequestResponse.user,
     );
 
-    if (credentialState === appleAuth.State.AUTHORIZED) {
-      const user = await fetch(`${config.api.host}/auth/apple`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: appleAuthRequestResponse.authorizationCode,
-        }),
-      }).then(response => response.json());
+    if (
+      credentialState === appleAuth.State.AUTHORIZED &&
+      appleAuthRequestResponse.authorizationCode
+    ) {
+      const response = await authApi.authControllerApple({
+        code: appleAuthRequestResponse.authorizationCode,
+      });
 
-      if (user?.accessToken) {
-        setToken(user.accessToken);
+      if (response?.accessToken) {
+        setToken(response.accessToken);
       }
     }
   };

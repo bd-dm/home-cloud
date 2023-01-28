@@ -1,10 +1,5 @@
-import React, {
-  createContext,
-  FC,
-  PropsWithChildren,
-  useContext,
-  useState,
-} from 'react';
+import type {FC, PropsWithChildren} from 'react';
+import React, {createContext, useContext, useState} from 'react';
 
 export type AuthContextType = {
   isAuthorized: boolean;

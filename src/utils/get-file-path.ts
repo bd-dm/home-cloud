@@ -1,7 +1,5 @@
-import {
-  CameraRoll,
-  PhotoIdentifier,
-} from '@react-native-camera-roll/camera-roll';
+import type {PhotoIdentifier} from '@react-native-camera-roll/camera-roll';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 
 const getFilePath = async (
   file: PhotoIdentifier,
